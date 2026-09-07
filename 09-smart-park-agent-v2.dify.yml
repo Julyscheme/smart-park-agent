@@ -1,0 +1,759 @@
+app:
+  description: 智慧园区工单处理 Agent v2：知识库检索→信息提取→必要字段判断→工单分类→安全检测→责任人指派→工单生成（11节点）
+  icon: 📋
+  icon_background: '#E8F5E9'
+  icon_type: emoji
+  mode: workflow
+  name: 工单处理工作流 v2
+  use_icon_as_answer_icon: false
+dependencies:
+- current_identifier: null
+  type: marketplace
+  value:
+    marketplace_plugin_unique_identifier: langgenius/tongyi:0.1.42@db089179610a44ce4ba3cf123e61cb75fe20441a609ec1b0364b43447ced7210
+    version: null
+kind: app
+version: 0.7.0
+workflow:
+  conversation_variables: []
+  environment_variables: []
+  features:
+    file_upload:
+      allowed_file_extensions: []
+      allowed_file_types: []
+      allowed_file_upload_methods: []
+      enabled: false
+      fileUploadConfig:
+        attachment_image_file_size_limit: 2
+        audio_file_size_limit: 50
+        batch_count_limit: 5
+        file_size_limit: 15
+        file_upload_limit: 20
+        image_file_batch_limit: 10
+        image_file_size_limit: 10
+        single_chunk_attachment_limit: 10
+        video_file_size_limit: 100
+        workflow_file_upload_limit: 10
+      image:
+        enabled: false
+        number_limits: 3
+        transfer_methods:
+        - local_file
+        - remote_url
+      number_limits: 3
+    opening_statement: ''
+    retriever_resource:
+      enabled: false
+    sensitive_word_avoidance:
+      enabled: false
+    speech_to_text:
+      enabled: false
+    suggested_questions: []
+    suggested_questions_after_answer:
+      enabled: false
+    text_to_speech:
+      enabled: false
+      language: ''
+      voice: ''
+  graph:
+    edges:
+    - data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: start
+        targetType: knowledge-retrieval
+      id: start-source-kb_query-target
+      source: start
+      sourceHandle: source
+      target: kb_query
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: knowledge-retrieval
+        targetType: llm
+      id: kb_query-source-extract_info-target
+      source: kb_query
+      sourceHandle: source
+      target: extract_info
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: llm
+        targetType: if-else
+      id: extract_info-source-check_fields-target
+      source: extract_info
+      sourceHandle: source
+      target: check_fields
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: if-else
+        targetType: code
+      id: check_fields-true-source-ask_missing-target
+      source: check_fields
+      sourceHandle: 'true'
+      target: ask_missing
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: llm
+        targetType: code
+      id: classify-source-safety_check-target
+      source: classify
+      sourceHandle: source
+      target: safety_check
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: code
+        targetType: llm
+      id: safety_check-source-assign_dept-target
+      source: safety_check
+      sourceHandle: source
+      target: assign_dept
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: llm
+        targetType: llm
+      id: assign_dept-source-gen_ticket-target
+      source: assign_dept
+      sourceHandle: source
+      target: gen_ticket
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: code
+        targetType: end
+      id: ask_missing-source-end_ask-target
+      selected: false
+      source: ask_missing
+      sourceHandle: source
+      target: end_ask
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: if-else
+        targetType: llm
+      id: check_fields-false-classify-target
+      source: check_fields
+      sourceHandle: 'false'
+      target: classify
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: llm
+        targetType: code
+      id: gen_ticket-source-ticket_finalize-target
+      source: gen_ticket
+      sourceHandle: source
+      target: ticket_finalize
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: code
+        targetType: end
+      id: ticket_finalize-source-end_ticket-target
+      source: ticket_finalize
+      sourceHandle: source
+      target: end_ticket
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    nodes:
+    - data:
+        selected: false
+        title: 开始
+        type: start
+        variables:
+        - default: ''
+          hint: 请描述您的问题（如：A座301空调不制冷，联系方式13800138000）
+          label: 工单描述
+          max_length: 2000
+          options: []
+          placeholder: ''
+          required: true
+          type: paragraph
+          variable: user_description
+      height: 109
+      id: start
+      position:
+        x: 30
+        y: 261
+      positionAbsolute:
+        x: 30
+        y: 261
+      selected: true
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+      zIndex: 0
+    - data:
+        dataset_ids:
+        - yatFJ5a02XBt5rYSJzGs4kM6KVa13KezhR06TysLj17xwdHbT7+qPR8dvCAi0rI3
+        multiple_retrieval_config:
+          reranking_enable: false
+          score_threshold: 0.45
+          score_threshold_enabled: true
+          top_k: 3
+        query_variable_selector:
+        - start
+        - user_description
+        retrieval_mode: multiple
+        selected: false
+        title: 知识库查询
+        type: knowledge-retrieval
+      height: 90
+      id: kb_query
+      position:
+        x: 354
+        y: 282
+      positionAbsolute:
+        x: 354
+        y: 282
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+      zIndex: 0
+    - data:
+        context:
+          enabled: true
+          variable_selector:
+          - kb_query
+          - result
+        model:
+          completion_params:
+            max_tokens: 512
+            temperature: 0.1
+          mode: chat
+          name: qwen-plus-latest
+          provider: langgenius/tongyi/tongyi
+        prompt_template:
+        - id: sys-extract
+          role: system
+          text: "你是一个工单信息提取助手。请从用户报修描述中提取以下信息，以严格的JSON格式输出（不要包含markdown代码块标记）：\n\n\
+            {\n  \"location\": \"位置（楼栋+房间号，如'A座301'）\",\n  \"device_type\": \"设备类型（空调/暖气/照明/电梯/门禁/监控/消防/其他）\"\
+            ,\n  \"fault_description\": \"故障描述\",\n  \"contact\": \"联系方式（手机号）\"\n\
+            }\n\n提取规则：\n1. 如果用户未提供某字段，该字段输出空字符串\"\"\n2. 设备类型必须从上述8类中选择，无法确定时填\"其他\"\
+            \n3. 故障描述保持原文，不要重写\n4. contact 为手机号/座机等联系方式，未提供则输出空字符串"
+        - id: usr-extract
+          role: user
+          text: 用户报修描述：{{#start.user_description#}}
+        selected: false
+        structured_output:
+          schema:
+            additionalProperties: false
+            properties:
+              contact:
+                description: 联系方式（手机号）
+                type: string
+              device_type:
+                description: 设备类型（空调/暖气/照明/电梯/门禁/监控/消防/其他）
+                type: string
+              fault_description:
+                description: 故障描述
+                type: string
+              location:
+                description: 位置（楼栋+房间号，如A座301）
+                type: string
+            required:
+            - location
+            - device_type
+            - fault_description
+            - contact
+            type: object
+        structured_output_enabled: true
+        title: 信息提取
+        type: llm
+        variables: []
+      height: 88
+      id: extract_info
+      position:
+        x: 678
+        y: 282
+      positionAbsolute:
+        x: 678
+        y: 282
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+      zIndex: 0
+    - data:
+        cases:
+        - case_id: 'true'
+          conditions:
+          - comparison_operator: empty
+            value: ''
+            variable_selector:
+            - extract_info
+            - structured_output
+            - location
+          - comparison_operator: empty
+            value: ''
+            variable_selector:
+            - extract_info
+            - structured_output
+            - device_type
+          - comparison_operator: empty
+            value: ''
+            variable_selector:
+            - extract_info
+            - structured_output
+            - fault_description
+          id: 'true'
+          logical_operator: or
+        selected: true
+        title: 必要字段判断
+        type: if-else
+      height: 224
+      id: check_fields
+      position:
+        x: 1004.6390158215459
+        y: 222.62214401521976
+      positionAbsolute:
+        x: 1004.6390158215459
+        y: 222.62214401521976
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+      zIndex: 0
+    - data:
+        code: "def main(fault_description: str, device_type: str) -> dict:\n    text\
+          \ = (fault_description or '') + ' ' + (device_type or '')\n    keywords\
+          \ = ['燃气泄漏', '燃气', '电路故障', '火灾', '着火', '冒烟', '漏水', '电梯困人', '困人', '漏电', '触电',\
+          \ '爆炸', '异味']\n    is_safety = any(k in text for k in keywords)\n    return\
+          \ {'is_safety': is_safety}"
+        code_language: python3
+        outputs:
+          is_safety:
+            type: boolean
+        selected: false
+        title: 安全检测
+        type: code
+        variables:
+        - value_selector:
+          - extract_info
+          - structured_output
+          - fault_description
+          value_type: string
+          variable: fault_description
+        - value_selector:
+          - extract_info
+          - structured_output
+          - device_type
+          value_type: string
+          variable: device_type
+      height: 52
+      id: safety_check
+      position:
+        x: 1669.152112392515
+        y: 402.92893307124024
+      positionAbsolute:
+        x: 1669.152112392515
+        y: 402.92893307124024
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+      zIndex: 0
+    - data:
+        context:
+          enabled: false
+          variable_selector: []
+        model:
+          completion_params:
+            max_tokens: 512
+            temperature: 0.1
+          mode: chat
+          name: qwen-plus-latest
+          provider: langgenius/tongyi/tongyi
+        prompt_template:
+        - id: sys-classify
+          role: system
+          text: "你是一个工单分类助手。请将以下设备故障分类为8类之一，输出严格的JSON格式（不要包含markdown代码块标记）：\n\n分类清单：\n\
+            1. 空调 — 空调制冷/制热/噪音/漏水等问题\n2. 暖气 — 暖气不热/漏水/阀门故障等问题\n3. 照明 — 灯具不亮/开关故障/线路问题\n\
+            4. 电梯 — 电梯故障/困人/异响等问题\n5. 门禁 — 门禁刷卡失效/门锁故障等问题\n6. 监控 — 监控摄像头故障/录像异常等问题\n\
+            7. 消防 — 消防设施故障/烟感报警等问题\n8. 其他 — 无法归入上述7类的其他设备\n\n输出JSON格式：\n{\n  \"category\"\
+            : \"分类名称（从上述8类中选择）\",\n  \"confidence\": \"置信度（0.0-1.0）\"\n}"
+        - id: usr-classify
+          role: user
+          text: '输入信息：
+
+            设备类型：{{#extract_info.structured_output.device_type#}}
+
+            故障描述：{{#extract_info.structured_output.fault_description#}}'
+        selected: false
+        structured_output:
+          schema:
+            additionalProperties: false
+            properties:
+              category:
+                description: 分类名称（空调/暖气/照明/电梯/门禁/监控/消防/其他）
+                type: string
+              confidence:
+                description: 置信度（0.0-1.0）
+                type: string
+            required:
+            - category
+            type: object
+        structured_output_enabled: true
+        title: 工单分类
+        type: llm
+        variables: []
+      height: 88
+      id: classify
+      position:
+        x: 1343.4110112659225
+        y: 402.92893307124024
+      positionAbsolute:
+        x: 1343.4110112659225
+        y: 402.92893307124024
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+      zIndex: 0
+    - data:
+        context:
+          enabled: false
+          variable_selector: []
+        model:
+          completion_params:
+            max_tokens: 512
+            temperature: 0.1
+          mode: chat
+          name: qwen-plus-latest
+          provider: langgenius/tongyi/tongyi
+        prompt_template:
+        - id: sys-assign
+          role: system
+          text: "你是一个责任人指派助手。根据设备信息，指派责任部门，输出严格的JSON格式（不要包含markdown代码块标记）：\n\n路由表（设备类型→责任部门）：\n\
+            - 空调/暖气 → 设备维修组\n- 照明/电路 → 电力维修组\n- 电梯 → 电梯维保组\n- 门禁/监控 → 安保巡查组\n- 消防\
+            \ → 安保应急组\n- 燃气 → 安保应急组\n- 其他 → 综合事务组\n\n判定规则：\n1. 设备类型明确命中路由表时，直接指派\n\
+            2. 设备类型为「其他」时，结合故障描述判断：涉及电路/跳闸/配电/焦糊味/线路 → 电力维修组；涉及燃气/燃气味/泄漏/异味/消防设施/烟感\
+            \ → 安保应急组\n3. 无法判断时输出「综合事务组」\n\n输出JSON格式：\n{\n  \"department\": \"责任部门名称\"\
+            \n}"
+        - id: usr-assign
+          role: user
+          text: '输入信息：
+
+            - 设备类型：{{#extract_info.structured_output.device_type#}}
+
+            - 故障描述：{{#extract_info.structured_output.fault_description#}}
+
+            - 分类：{{#classify.structured_output.category#}}
+
+
+            请按路由表与判定规则指派责任部门。'
+        selected: false
+        structured_output:
+          schema:
+            additionalProperties: false
+            properties:
+              department:
+                description: 责任部门名称
+                type: string
+            required:
+            - department
+            type: object
+        structured_output_enabled: true
+        title: 责任人指派
+        type: llm
+        variables: []
+      height: 88
+      id: assign_dept
+      position:
+        x: 1970.5177977468156
+        y: 402.92893307124024
+      positionAbsolute:
+        x: 1970.5177977468156
+        y: 402.92893307124024
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+      zIndex: 0
+    - data:
+        context:
+          enabled: false
+          variable_selector: []
+        model:
+          completion_params:
+            max_tokens: 1024
+            temperature: 0.3
+          mode: chat
+          name: qwen-plus-latest
+          provider: langgenius/tongyi/tongyi
+        prompt_template:
+        - id: sys-gen
+          role: system
+          text: "你是一个工单生成助手。请根据以下信息生成工单JSON，输出严格的JSON格式（不要包含markdown代码块标记）：\n\n输出JSON格式：\n\
+            {\n  \"ticket_id\": \"生成唯一工单ID（格式：WO-YYYYMMDD-XXXX）\",\n  \"type\": \"\
+            分类\",\n  \"priority\": \"优先级（安全工单→高；普通工单→中）\",\n  \"location\": \"位置\"\
+            ,\n  \"device\": \"设备类型\",\n  \"description\": \"故障描述\",\n  \"department\"\
+            : \"责任部门\",\n  \"contact\": \"联系方式\",\n  \"created_at\": \"创建时间（ISO 8601格式）\"\
+            ,\n  \"status\": \"待处理\"\n}"
+        - id: usr-gen
+          role: user
+          text: '输入信息：
+
+            - 位置：{{#extract_info.structured_output.location#}}
+
+            - 设备类型：{{#extract_info.structured_output.device_type#}}
+
+            - 分类：{{#classify.structured_output.category#}}
+
+            - 故障描述：{{#extract_info.structured_output.fault_description#}}
+
+            - 责任部门：{{#assign_dept.structured_output.department#}}
+
+            - 联系方式：{{#extract_info.structured_output.contact#}}
+
+            - 是否安全工单：{{#safety_check.is_safety#}}
+
+
+            请输出工单JSON：'
+        selected: false
+        structured_output:
+          schema:
+            additionalProperties: false
+            properties:
+              contact:
+                description: 联系方式
+                type: string
+              created_at:
+                description: 创建时间（ISO 8601）
+                type: string
+              department:
+                description: 责任部门
+                type: string
+              description:
+                description: 故障描述
+                type: string
+              device:
+                description: 设备类型
+                type: string
+              location:
+                description: 位置
+                type: string
+              priority:
+                description: 优先级（高/中）
+                type: string
+              status:
+                description: 状态
+                type: string
+              ticket_id:
+                description: 唯一工单ID（WO-YYYYMMDD-XXXX）
+                type: string
+              type:
+                description: 分类
+                type: string
+            required:
+            - ticket_id
+            - type
+            - priority
+            - location
+            - device
+            - description
+            - department
+            - status
+            type: object
+        structured_output_enabled: true
+        title: 工单生成
+        type: llm
+        variables: []
+      height: 88
+      id: gen_ticket
+      position:
+        x: 2301.789291416276
+        y: 402.92893307124024
+      positionAbsolute:
+        x: 2301.789291416276
+        y: 402.92893307124024
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+      zIndex: 0
+    - data:
+        outputs:
+        - value_selector:
+          - ticket_finalize
+          - ticket
+          value_type: object
+          variable: ticket_result
+        selected: false
+        title: 输出工单
+        type: end
+      height: 88
+      id: end_ticket
+      position:
+        x: 2614.421417167448
+        y: 402.92893307124024
+      positionAbsolute:
+        x: 2614.421417167448
+        y: 402.92893307124024
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+      zIndex: 0
+    - data:
+        code: "def main(location: str, device_type: str, fault_description: str, contact:\
+          \ str) -> dict:\n    missing = []\n    if not location:\n        missing.append('具体位置（楼栋+房间号）')\n\
+          \    if not device_type:\n        missing.append('设备类型')\n    if not fault_description:\n\
+          \        missing.append('故障描述')\n    if not contact:\n        missing.append('联系方式')\n\
+          \    msg = '您提供的信息不完整，请补充：' + '、'.join(missing) + '。'\n    return {'follow_up':\
+          \ msg}"
+        code_language: python3
+        outputs:
+          follow_up:
+            type: string
+        selected: false
+        title: 追问
+        type: code
+        variables:
+        - value_selector:
+          - extract_info
+          - structured_output
+          - location
+          value_type: string
+          variable: location
+        - value_selector:
+          - extract_info
+          - structured_output
+          - device_type
+          value_type: string
+          variable: device_type
+        - value_selector:
+          - extract_info
+          - structured_output
+          - fault_description
+          value_type: string
+          variable: fault_description
+        - value_selector:
+          - extract_info
+          - structured_output
+          - contact
+          value_type: string
+          variable: contact
+      height: 52
+      id: ask_missing
+      position:
+        x: 1330.3527528164807
+        y: 189.28143777071625
+      positionAbsolute:
+        x: 1330.3527528164807
+        y: 189.28143777071625
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+      zIndex: 0
+    - data:
+        outputs:
+        - value_selector:
+          - ask_missing
+          - follow_up
+          value_type: string
+          variable: follow_up
+        selected: false
+        title: 输出追问
+        type: end
+      height: 88
+      id: end_ask
+      position:
+        x: 1678.7281685887722
+        y: 189.28143777071625
+      positionAbsolute:
+        x: 1678.7281685887722
+        y: 189.28143777071625
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+      zIndex: 0
+    - data:
+        code: "import uuid\nfrom datetime import datetime, timezone, timedelta\n\n\
+          def main(ticket: dict) -> dict:\n    tz = timezone(timedelta(hours=8))\n\
+          \    now = datetime.now(tz)\n    ticket['ticket_id'] = 'WO-' + now.strftime('%Y%m%d')\
+          \ + '-' + uuid.uuid4().hex[:8].upper()\n    ticket['created_at'] = now.strftime('%Y-%m-%dT%H:%M:%S+08:00')\n\
+          \    return {'ticket': ticket}"
+        code_language: python3
+        desc: ''
+        outputs:
+          ticket:
+            children: null
+            type: object
+        selected: false
+        title: 工单编号固化
+        type: code
+        variables:
+        - value_selector:
+          - gen_ticket
+          - structured_output
+          value_type: object
+          variable: ticket
+      height: 90
+      id: ticket_finalize
+      position:
+        x: 2458.1053542918617
+        y: 402.92893307124024
+      positionAbsolute:
+        x: 2458.1053542918617
+        y: 402.92893307124024
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+      zIndex: 0
+    viewport:
+      x: -25.814685221283753
+      y: 243.0532135380027
+      zoom: 0.25
+  rag_pipeline_variables: []

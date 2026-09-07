@@ -1,0 +1,180 @@
+app:
+  description: 面向产业园区运营方、入驻企业和物业人员的AI助手，提供知识查询、工单处理、数据查询、异常告警等功能
+  icon: "\U0001F3E2"
+  icon_background: "#E3F2FD"
+  icon_type: emoji
+  mode: advanced-chat
+  name: 智慧园区运营助手
+  use_icon_as_answer_icon: false
+dependencies: []
+kind: app
+version: 0.7.0
+workflow:
+  conversation_variables:
+  - description: 用户身份（运营方/企业员工/巡检人员）
+    id: user_role
+    name: user_role
+    value: 访客
+    value_type: string
+  - description: 当前所在楼栋（A/B/C座）
+    id: current_building
+    name: current_building
+    value: ''
+    value_type: string
+  environment_variables: []
+  features:
+    file_upload:
+      allowed_file_extensions:
+      - .JPG
+      - .JPEG
+      - .PNG
+      - .GIF
+      - .WEBP
+      - .SVG
+      allowed_file_types:
+      - image
+      allowed_file_upload_methods:
+      - local_file
+      - remote_url
+      enabled: true
+      fileUploadConfig:
+        attachment_image_file_size_limit: 2
+        audio_file_size_limit: 50
+        batch_count_limit: 5
+        file_size_limit: 15
+        file_upload_limit: 20
+        image_file_batch_limit: 10
+        image_file_size_limit: 10
+        single_chunk_attachment_limit: 10
+        video_file_size_limit: 100
+        workflow_file_upload_limit: 10
+      image:
+        enabled: true
+        number_limits: 3
+        transfer_methods:
+        - local_file
+        - remote_url
+      number_limits: 3
+    opening_statement: "你好！我是智谷产业园的AI运营助手。你可以直接问我园区管理制度、应急预案、设备手册相关的问题，也可以让我帮你创建报修工单、查询运营数据。试试问我：\n\n📋 \"A座的物业费是多少？\"\n🔧 \"602空调不制冷，帮我报修\"\n📊 \"今天人流量怎么样？\"\n🚨 \"有什么异常需要关注？\""
+    retriever_resource:
+      enabled: true
+    sensitive_word_avoidance:
+      enabled: false
+    speech_to_text:
+      enabled: true
+    suggested_questions:
+    - A座的物业费是多少？包含哪些服务？
+    - 发生火灾时人员应该怎么疏散？
+    - 帮我创建一个报修工单
+    - 这个星期A座的用电情况怎么样？
+    - 检查一下有什么设备异常？
+    suggested_questions_after_answer:
+      enabled: false
+    text_to_speech:
+      enabled: false
+      language: ''
+      voice: ''
+  graph:
+    edges:
+    - data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: start
+        targetType: answer
+      id: start-answer
+      source: start
+      sourceHandle: source
+      target: answer
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    nodes:
+    - data:
+        selected: false
+        title: 开始
+        type: start
+        variables:
+        - allowed_file_extensions:
+          - .jpg
+          - .jpeg
+          - .png
+          - .webp
+          allowed_file_types:
+          - image
+          allowed_file_upload_methods:
+          - local_file
+          - remote_url
+          default: ''
+          hint: ''
+          label: sys.files
+          max_length: 48
+          options: []
+          placeholder: ''
+          required: false
+          type: file-list
+          variable: sys.files
+        - default: ''
+          hint: ''
+          label: sys.query
+          max_length: 2000
+          options: []
+          placeholder: ''
+          required: true
+          type: paragraph
+          variable: sys.query
+      height: 168
+      id: start
+      position:
+        x: 80
+        y: 282
+      positionAbsolute:
+        x: 80
+        y: 282
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+      zIndex: 0
+    - data:
+        answer: ''
+        selected: false
+        title: 智慧园区运营助手
+        type: answer
+        model:
+          completion_params:
+            frequency_penalty: 0
+            max_tokens: 2048
+            presence_penalty: 0
+            temperature: 0.3
+            top_p: 0.9
+          mode: chat
+          name: gpt-4o-mini
+          provider: openai
+        prompt_template:
+        - id: system-prompt
+          role: system
+          text: "# 角色\n你是智谷产业园的AI运营助手，服务于园区运营经理、入驻企业员工、物业和巡检人员。\n\n# 能力范围\n你具备以下四个核心能力，根据用户意图自动选择：\n\n1. **知识库问答**：回答园区管理制度、应急预案、设备手册相关问题。回答必须引用知识库内容，并标注来源段落。\n2. **工单处理**：帮用户创建、查询、跟踪工单。需要提取位置、设备类型、紧急程度等信息。\n3. **数据查询**：查询园区运营数据（人流量、能耗、设备状态、工单统计）。数据基于模拟数据集。\n4. **异常告警**：检测运营数据中的异常，自动生成告警并推送。\n\n# 回答规则\n- 始终用中文回答，语气专业但不生硬。\n- 知识库问题：优先使用知识库内容回答，并在末尾标注引用。如果知识库中没有相关信息，诚实告知\"该问题暂时无法从知识库中查到，建议联系园区运营管理部人工确认（电话：021-XXXX-XXXX）\"。\n- 工单处理：引导用户提供必要信息（位置、问题描述），生成工单后反馈工单编号和处理时限。\n- 数据查询：将自然语言转为具体的查询维度，返回数据和简要分析。\n- 异常告警：明确告警级别、影响范围和建议措施。\n\n# 安全红线\n- 不编造知识库中没有的政策或规定\n- 紧急安全事件（火灾、漏电、电梯困人）优先引导用户拨打对应应急电话（119/110/120）和园区消防控制室（021-XXXX-XXXX）\n- 涉及费用、合同条款等敏感问题时，建议用户联系园区运营管理部人工确认\n\n# 数据查询能力\n\n你可以查询以下运营数据（基于模拟数据集，2025年7月15-21日）：\n\n## 人流量数据\n- 工作日日均约2,250人次（A座~1,250, B座~650, C座~320）\n- 周末日均约690人次（A座~415, B座~165, C座~108）\n\n## 能耗数据（工作日日均）\n- 用电：A座~4,950kWh, B座~2,200kWh, C座~1,010kWh\n- 用水：A座~40m³, B座~23m³, C座~12m³\n- 周末能耗约为工作日的35%\n\n## 设备状态（截至7/21）\n- 中央空调：1#运行中, 2#运行中, 3#待机\n- 电梯：A座3号梯运行异响，已报修（WO-2025-009），其余正常运行\n- 发电机：待机，油量78%，上次测试7/19\n- 消防泵：均待机，上次测试7/15\n\n## 工单统计（7/15-21）\n- 总工单10张：已完成4张、处理中3张、待派单2张、待评估1张\n- 紧急3张、普通5张、低优先级2张\n- 平均响应时间25分钟，平均解决时间3.2小时\n\n# 异常告警规则\n\n当用户询问\"有什么异常\"或需要检查时，按以下规则检测：\n\n1. **能耗异常**：单日用电超过工作日均值的150% → 触发告警\n2. **设备异常**：设备状态为\"待检修\"或\"故障\" → 列入告警列表\n3. **工单积压**：紧急工单超过2小时未响应 → 触发告警\n4. **巡检逾期**：距离下次计划维护日期不足7天 → 提醒\n\n告警输出格式：\n```\n🚨 异常告警报告（{日期}）\n\n1. [告警级别] {告警标题}\n   详情：{具体描述}\n   建议：{处理建议}\n```\n\n# 工单分类与优先级规则\n\n分类标准：\n- **报修**：设备故障、设施损坏、需要维修\n- **投诉**：对服务、环境、管理等表达不满\n- **咨询**：询问政策、流程、费用等信息\n- **建议**：提出改进建议或新需求\n\n优先级判断：\n- **紧急**：涉及安全（漏电/火灾/电梯困人/异响）、严重影响运营\n- **普通**：一般设备故障、日常报修\n- **低**：咨询类、建议类\n\n责任人分配：\n- 空调类 → 物业工程部-暖通组\n- 电力类 → 物业工程部-电工组\n- 给排水类 → 物业工程部-给排水组\n- 电梯类 → 电梯维保-XX电梯有限公司\n- 消防类 → 物业工程部-综合维修组\n- 安防/监控类 → 弱电维保-XX智能科技\n- 环境卫生类 → 物业保洁部\n- 停车/配套设施/咨询/建议 → 园区运营部\n\n响应时限：\n- 紧急工单 → 30分钟内响应，2小时内完成\n- 普通工单 → 2小时内响应，24小时内完成\n- 低优先级 → 24小时内响应，3个工作日内完成\n\n# 工单回复模板\n\n当用户描述一个问题，你提取了足够信息后，用以下格式回复：\n\n```\n✅ 工单已创建！\n\n📋 工单编号：WO-{日期}-{序号}\n📂 分类：{报修/投诉/咨询/建议}\n⚠️ 优先级：{紧急/普通/低}\n📍 位置：{具体位置}\n👤 责任人：{责任部门-责任人}\n⏱️ 预计响应：{时间}\n\n我们将尽快处理您的问题。如需加急，请联系物业工程部（24小时电话：021-XXXX-XXXX）。\n```\n\n如果信息不完整，先追问必要的缺失信息再生成工单。但涉及安全关键词（漏电/火灾/冒烟/困人/异响等）时，跳过追问环节立即标记为紧急。"
+        context:
+          enabled: true
+          variable_selector: []
+        variables: []
+      height: 103
+      id: answer
+      position:
+        x: 454
+        y: 282
+      positionAbsolute:
+        x: 454
+        y: 282
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+      zIndex: 0
+    viewport:
+      x: 0
+      y: 0
+      zoom: 0.8
+  rag_pipeline_variables: []

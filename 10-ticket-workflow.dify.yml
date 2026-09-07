@@ -1,0 +1,442 @@
+app:
+  description: 智能工单处理：自动提取信息→LLM分类→优先级判断→安全检测→指派责任人→生成工单
+  icon: "\U0001F4CB"
+  icon_background: "#FFF3E0"
+  icon_type: emoji
+  mode: workflow
+  name: 工单处理工作流
+  use_icon_as_answer_icon: false
+dependencies: []
+kind: app
+version: 0.7.0
+workflow:
+  conversation_variables: []
+  environment_variables: []
+  features:
+    file_upload:
+      allowed_file_extensions: []
+      allowed_file_types: []
+      allowed_file_upload_methods: []
+      enabled: false
+      fileUploadConfig:
+        attachment_image_file_size_limit: 2
+        audio_file_size_limit: 50
+        batch_count_limit: 5
+        file_size_limit: 15
+        file_upload_limit: 20
+        image_file_batch_limit: 10
+        image_file_size_limit: 10
+        single_chunk_attachment_limit: 10
+        video_file_size_limit: 100
+        workflow_file_upload_limit: 10
+      image:
+        enabled: false
+        number_limits: 3
+        transfer_methods:
+        - local_file
+        - remote_url
+      number_limits: 3
+    opening_statement: ''
+    retriever_resource:
+      enabled: false
+    sensitive_word_avoidance:
+      enabled: false
+    speech_to_text:
+      enabled: false
+    suggested_questions: []
+    suggested_questions_after_answer:
+      enabled: false
+    text_to_speech:
+      enabled: false
+      language: ''
+      voice: ''
+  graph:
+    edges:
+    - data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: start
+        targetType: llm
+      id: start-source-extract-info-target
+      source: start
+      sourceHandle: source
+      target: extract-info
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: llm
+        targetType: llm
+      id: extract-info-source-classify-target
+      source: extract-info
+      sourceHandle: source
+      target: classify
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: llm
+        targetType: code
+      id: classify-source-generate-ticket-target
+      source: classify
+      sourceHandle: source
+      target: generate-ticket
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: code
+        targetType: code
+      id: generate-ticket-source-format-response-target
+      source: generate-ticket
+      sourceHandle: source
+      target: format-response
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: code
+        targetType: end
+      id: format-response-source-end-target
+      source: format-response
+      sourceHandle: source
+      target: end
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    nodes:
+    - data:
+        selected: false
+        title: 用户输入
+        type: start
+        variables:
+        - default: ''
+          hint: 请描述您的问题（如：A座602空调出风口滴水，地板已经湿了一片）
+          label: 问题描述
+          max_length: 2000
+          options: []
+          placeholder: ''
+          required: true
+          type: paragraph
+          variable: user_description
+      height: 109
+      id: start
+      position:
+        x: 30
+        y: 282
+      positionAbsolute:
+        x: 30
+        y: 282
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+      zIndex: 0
+    - data:
+        context:
+          enabled: false
+          variable_selector: []
+        model:
+          completion_params:
+            temperature: 0.1
+            max_tokens: 512
+          mode: chat
+          name: qwen-plus-latest
+          provider: langgenius/tongyi/tongyi
+        prompt_template:
+        - id: sys-01
+          role: system
+          text: "你是一个工单信息提取助手。从用户的描述中提取以下结构化信息。\n\n输出严格的JSON格式（不要包含markdown代码块标记）：\n{\n  \"location\": \"具体位置（楼栋+楼层+房间号，如无法确定填'待确认'）\",\n  \"device_type\": \"涉及设备类型（空调/电梯/电力/给排水/消防/安防/照明/其他）\",\n  \"description\": \"问题简要描述（50字以内）\",\n  \"urgency_signals\": [],\n  \"has_safety_risk\": false\n}\n\n提取规则：\n- 如果用户提到\"漏水\"\"漏电\"\"火灾\"\"冒烟\"\"困人\"\"异响\"等词，urgency_signals标记对应信号，has_safety_risk标记为true\n- device_type从关键词推断：空调/制冷/不凉→空调，电/插座/跳闸→电力，漏水/水管/马桶→给排水，电梯→电梯"
+        - id: usr-01
+          role: user
+          text: '用户描述：{{#start.user_description#}}'
+        selected: false
+        title: 信息提取
+        type: llm
+        variables: []
+        structured_output_enabled: false
+        structured_output:
+          schema:
+            additionalProperties: false
+            properties:
+              location:
+                type: string
+                description: 具体位置（楼栋+楼层+房间号）
+              device_type:
+                type: string
+                description: 涉及设备类型
+              description:
+                type: string
+                description: 问题简要描述
+              urgency_signals:
+                type: array
+                items:
+                  type: string
+                description: 紧急信号列表
+              has_safety_risk:
+                type: boolean
+                description: 是否涉及安全风险
+            required:
+            - location
+            - device_type
+            - description
+            - has_safety_risk
+            type: object
+      height: 88
+      id: extract-info
+      position:
+        x: 354
+        y: 120
+      positionAbsolute:
+        x: 354
+        y: 120
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+      zIndex: 0
+    - data:
+        context:
+          enabled: false
+          variable_selector: []
+        model:
+          completion_params:
+            temperature: 0.1
+            max_tokens: 512
+          mode: chat
+          name: qwen-plus-latest
+          provider: langgenius/tongyi/tongyi
+        prompt_template:
+        - id: sys-02
+          role: system
+          text: "你是一个工单分类助手。根据提取的工单信息进行分类和优先级判断。\n\n分类标准：\n1. 报修 - 设备故障、设施损坏、需要维修\n2. 投诉 - 对服务、环境、管理等表达不满\n3. 咨询 - 询问政策、流程、费用等\n4. 建议 - 提出改进建议或新需求\n\n优先级判断：\n- 紧急：涉及安全或严重影响运营\n- 普通：一般设备故障、日常报修\n- 低：咨询类、建议类\n\n责任人分配：\n- 空调 → 物业工程部-暖通组\n- 电力 → 物业工程部-电工组\n- 给排水 → 物业工程部-给排水组\n- 电梯 → 电梯维保-XX电梯有限公司\n- 消防 → 物业工程部-综合维修组\n- 安防/监控 → 弱电维保-XX智能科技\n- 环境卫生 → 物业保洁部\n- 其他 → 园区运营部-客户服务组\n\n输出严格的JSON格式（不要包含markdown代码块标记）：\n{\n  \"category\": \"报修\",\n  \"priority\": \"普通\",\n  \"category_reason\": \"分类依据\",\n  \"priority_reason\": \"优先级依据\",\n  \"assigned_to\": \"责任部门\"\n}"
+        - id: usr-02
+          role: user
+          text: '请分类以下工单信息：\n{{#extract-info.text#}}'
+        selected: false
+        title: 工单分类
+        type: llm
+        variables: []
+        structured_output_enabled: false
+        structured_output:
+          schema:
+            additionalProperties: false
+            properties:
+              category:
+                type: string
+                description: 报修/投诉/咨询/建议
+              priority:
+                type: string
+                description: 紧急/普通/低
+              category_reason:
+                type: string
+                description: 分类依据
+              priority_reason:
+                type: string
+                description: 优先级判断依据
+              assigned_to:
+                type: string
+                description: 责任部门-责任人
+            required:
+            - category
+            - priority
+            - assigned_to
+            type: object
+      height: 88
+      id: classify
+      position:
+        x: 354
+        y: 270
+      positionAbsolute:
+        x: 354
+        y: 270
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+      zIndex: 0
+    - data:
+        code: "import json\nfrom datetime import datetime, timedelta\n\ndef main(extract_result: str, classify_result: str) -> dict:\n    # Helper to parse JSON from LLM output\n    def parse_json(text):\n        text = text.strip()\n        if not text:\n            raise ValueError(\"Empty input\")\n        # Strip markdown code blocks (```json ... ``` or ``` ... ```)\n        if text.startswith(\"```\"):\n            lines = text.split(\"\\n\")\n            # Remove first line (```json or ```) and last line (```)\n            if len(lines) >= 3:\n                text = \"\\n\".join(lines[1:-1])\n            else:\n                text = lines[0].replace(\"```\", \"\")\n        # Find first { or [ to handle text before JSON\n        idx = text.find(\"{\")\n        if idx == -1:\n            idx = text.find(\"[\")\n        if idx > 0:\n            text = text[idx:]\n        return json.loads(text)\n\n    extraction = parse_json(extract_result)\n    classification = parse_json(classify_result)\n\n    now = datetime.now()\n    ticket_id = f\"WO-{now.strftime('%Y%m%d')}-{hash(extraction.get('description', '')) % 900 + 100:03d}\"\n\n    priority = classification.get(\"priority\", \"普通\")\n    if priority == \"紧急\":\n        response_deadline = (now + timedelta(minutes=30)).strftime(\"%Y-%m-%d %H:%M\")\n        completion_deadline = (now + timedelta(hours=2)).strftime(\"%Y-%m-%d %H:%M\")\n    elif priority == \"普通\":\n        response_deadline = (now + timedelta(hours=2)).strftime(\"%Y-%m-%d %H:%M\")\n        completion_deadline = (now + timedelta(hours=24)).strftime(\"%Y-%m-%d %H:%M\")\n    else:\n        response_deadline = (now + timedelta(hours=24)).strftime(\"%Y-%m-%d %H:%M\")\n        completion_deadline = (now + timedelta(days=3)).strftime(\"%Y-%m-%d %H:%M\")\n\n    return {\n        \"ticket_id\": ticket_id,\n        \"category\": classification.get(\"category\"),\n        \"priority\": priority,\n        \"location\": extraction.get(\"location\"),\n        \"device_type\": extraction.get(\"device_type\"),\n        \"description\": extraction.get(\"description\"),\n        \"assigned_to\": classification.get(\"assigned_to\"),\n        \"has_safety_risk\": extraction.get(\"has_safety_risk\", False),\n        \"response_deadline\": response_deadline,\n        \"completion_deadline\": completion_deadline,\n        \"created_at\": now.strftime(\"%Y-%m-%d %H:%M:%S\")\n    }\n"
+        code_language: python3
+        outputs:
+          assigned_to:
+            children: null
+            type: string
+          category:
+            children: null
+            type: string
+          completion_deadline:
+            children: null
+            type: string
+          created_at:
+            children: null
+            type: string
+          description:
+            children: null
+            type: string
+          device_type:
+            children: null
+            type: string
+          has_safety_risk:
+            children: null
+            type: boolean
+          location:
+            children: null
+            type: string
+          priority:
+            children: null
+            type: string
+          response_deadline:
+            children: null
+            type: string
+          ticket_id:
+            children: null
+            type: string
+        selected: false
+        title: 生成工单
+        type: code
+        variables:
+        - value_selector:
+          - extract-info
+          - text
+          value_type: string
+          variable: extract_result
+        - value_selector:
+          - classify
+          - text
+          value_type: string
+          variable: classify_result
+      height: 52
+      id: generate-ticket
+      position:
+        x: 668
+        y: 282
+      positionAbsolute:
+        x: 668
+        y: 282
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+      zIndex: 0
+    - data:
+        code: "def main(ticket_id: str, category: str, priority: str, location: str, device_type: str, description: str, assigned_to: str, has_safety_risk: bool, response_deadline: str, completion_deadline: str, created_at: str) -> dict:\n    safety_warning = \"\"\n    if has_safety_risk:\n        safety_warning = (\n            \"⚠️ 已检测到潜在安全风险！请确保现场人员安全。\\n\"\n            \"如需紧急援助，请立即拨打：火警 119 / 公安 110 / 急救 120\\n\"\n            \"园区消防控制室：021-XXXX-XXXX\\n\\n\"\n        )\n\n    message = (\n        f\"{safety_warning}\"\n        f\"✅ 工单已创建！\\n\\n\"\n        f\"📋 工单编号：{ticket_id}\\n\"\n        f\"📂 分类：{category}\\n\"\n        f\"⚠️ 优先级：{priority}\\n\"\n        f\"📍 位置：{location}\\n\"\n        f\"🔧 设备类型：{device_type}\\n\"\n        f\"📝 描述：{description}\\n\"\n        f\"👤 责任人：{assigned_to}\\n\"\n        f\"⏱️ 预计响应：{response_deadline}\\n\"\n        f\"⏱️ 预计完成：{completion_deadline}\\n\"\n        f\"🕐 创建时间：{created_at}\\n\\n\"\n        f\"我们将尽快处理您的问题。如需加急，请联系物业工程部（24小时电话：021-XXXX-XXXX）。\"\n    )\n\n    return {\"ticket_message\": message}\n"
+        code_language: python3
+        outputs:
+          ticket_message:
+            children: null
+            type: string
+        selected: false
+        title: 格式化回复
+        type: code
+        variables:
+        - value_selector:
+          - generate-ticket
+          - ticket_id
+          value_type: string
+          variable: ticket_id
+        - value_selector:
+          - generate-ticket
+          - category
+          value_type: string
+          variable: category
+        - value_selector:
+          - generate-ticket
+          - priority
+          value_type: string
+          variable: priority
+        - value_selector:
+          - generate-ticket
+          - location
+          value_type: string
+          variable: location
+        - value_selector:
+          - generate-ticket
+          - device_type
+          value_type: string
+          variable: device_type
+        - value_selector:
+          - generate-ticket
+          - description
+          value_type: string
+          variable: description
+        - value_selector:
+          - generate-ticket
+          - assigned_to
+          value_type: string
+          variable: assigned_to
+        - value_selector:
+          - generate-ticket
+          - has_safety_risk
+          value_type: boolean
+          variable: has_safety_risk
+        - value_selector:
+          - generate-ticket
+          - response_deadline
+          value_type: string
+          variable: response_deadline
+        - value_selector:
+          - generate-ticket
+          - completion_deadline
+          value_type: string
+          variable: completion_deadline
+        - value_selector:
+          - generate-ticket
+          - created_at
+          value_type: string
+          variable: created_at
+      height: 52
+      id: format-response
+      position:
+        x: 982
+        y: 282
+      positionAbsolute:
+        x: 982
+        y: 282
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+      zIndex: 0
+    - data:
+        outputs:
+        - value_selector:
+          - format-response
+          - ticket_message
+          value_type: string
+          variable: ticket_message
+        selected: false
+        title: 结束
+        type: end
+      height: 109
+      id: end
+      position:
+        x: 1296
+        y: 282
+      positionAbsolute:
+        x: 1296
+        y: 282
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+      zIndex: 0
+    viewport:
+      x: -50
+      y: 0
+      zoom: 0.7
+  rag_pipeline_variables: []
