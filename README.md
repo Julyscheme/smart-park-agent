@@ -91,6 +91,23 @@
 
 ---
 
+## 运行截图（2026-09-06 实机）
+
+| 截图 | 说明 |
+|------|------|
+| ![画布全貌](screenshots/01-canvas-full.png) | 12 节点工作流画布全貌 |
+| ![节点配置](screenshots/03-node-config.png) | qwen-plus-latest 节点配置 |
+| ![运行记录](screenshots/04-run-list.png) | 运行记录列表 |
+| ![正常工单对话](screenshots/05-chat-normal.png) | 正常工单对话效果（空调报修） |
+| ![安全工单对话](screenshots/06-chat-safety.png) | 安全工单对话效果（高优先级） |
+| ![工单 JSON 输出](screenshots/07-ticket-json.png) | 结构化工单 JSON 输出 |
+| ![运行追踪-正常](screenshots/08-trace-normal.png) | 运行追踪（正常工单，节点级日志） |
+| ![运行追踪-安全](screenshots/09-trace-safety.png) | 运行追踪（安全工单，节点级日志） |
+
+> 完整 9 张截图见 `screenshots/` 目录。
+
+---
+
 ## 快速复现
 
 ### 前提
